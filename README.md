@@ -17,7 +17,8 @@ API.
 
 ## Design Goals
 
-- **Small API surface**: expose a single `CaseStyle` enum and five constants.
+- **Small API surface**: expose one core `CaseStyle` enum, five convenience
+  constants, and focused parsing and validation errors.
 - **Consistent behavior**: provide stable conversion results for supported ASCII
   identifier formats.
 - **Strict matching**: validate whether a string conforms to a style.
@@ -54,10 +55,17 @@ use qubit_case::{
 let value = LOWER_HYPHEN.to(LOWER_CAMEL, "hello-world");
 assert_eq!(value, "helloWorld");
 
-let constant = LOWER_CAMEL.to(UPPER_UNDERSCORE, "http2Client");
+LOWER_CAMEL
+    .validate("http2Client")
+    .expect("the value should be lower camel case");
+
+let constant = LOWER_CAMEL
+    .checked_to(UPPER_UNDERSCORE, "http2Client")
+    .expect("the source value should be valid");
 assert_eq!(constant, "HTTP_2_CLIENT");
 
 assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
+assert_eq!(LOWER_CAMEL.to_string(), "lower-camel");
 ```
 
 ## API Reference
@@ -68,6 +76,8 @@ assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
   supported case styles and conversion methods.
 - [`CaseStyleError`](https://docs.rs/qubit-case/latest/qubit_case/struct.CaseStyleError.html) -
   error returned when parsing an unknown style name.
+- [`CaseStyleValidationError`](https://docs.rs/qubit-case/latest/qubit_case/struct.CaseStyleValidationError.html) -
+  error returned when a value does not match the expected style.
 
 ### Constants
 
@@ -84,15 +94,25 @@ assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
   hyphen and underscore as equivalent.
 - `CaseStyle::name()` returns the canonical lower-hyphen style name.
 - `CaseStyle::word_separator()` returns the style separator.
-- `CaseStyle::to(target, value)` converts an identifier to another style.
+- `CaseStyle::to(target, value)` performs permissive best-effort conversion
+  without validating the source or guaranteeing that invalid input matches the
+  target style.
+- `CaseStyle::validate(value)` validates an identifier and reports a mismatch.
+- `CaseStyle::checked_to(target, value)` validates the source before converting
+  it.
 - `CaseStyle::matches(value)` checks whether an identifier strictly follows a
   style.
 
+### Trait Implementations
+
+- `Display` formats a style using its canonical lower-hyphen name.
+- `FromStr` parses the names accepted by `CaseStyle::of`.
+
 ## Testing & Code Coverage
 
-This project tests successful conversions, style parsing, style matching,
-CamelCase acronym boundaries, digit boundaries, empty input, and best-effort
-conversion behavior.
+This project tests successful and checked conversions, validation errors, style
+parsing and display, style matching, CamelCase acronym boundaries, digit
+boundaries, empty input, Unicode safety, and best-effort conversion behavior.
 
 ### Running Tests
 

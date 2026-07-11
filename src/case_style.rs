@@ -9,9 +9,15 @@
 //!
 //! Defines ASCII identifier naming styles and conversion helpers.
 
-use crate::CaseStyleError;
+use crate::{
+    CaseStyleError,
+    CaseStyleValidationError,
+};
 
-use std::str::FromStr;
+use std::{
+    fmt,
+    str::FromStr,
+};
 
 /// XML hyphenated variable naming style, such as `lower-hyphen`.
 pub const LOWER_HYPHEN: CaseStyle = CaseStyle::LowerHyphen;
@@ -60,21 +66,6 @@ pub enum CaseStyle {
 }
 
 impl CaseStyle {
-    /// XML hyphenated variable naming style, such as `lower-hyphen`.
-    pub const LOWER_HYPHEN: Self = Self::LowerHyphen;
-
-    /// C++/Python variable naming style, such as `lower_underscore`.
-    pub const LOWER_UNDERSCORE: Self = Self::LowerUnderscore;
-
-    /// Java variable naming style, such as `lowerCamel`.
-    pub const LOWER_CAMEL: Self = Self::LowerCamel;
-
-    /// Java and C++ class naming style, such as `UpperCamel`.
-    pub const UPPER_CAMEL: Self = Self::UpperCamel;
-
-    /// Java and C++ constant naming style, such as `UPPER_UNDERSCORE`.
-    pub const UPPER_UNDERSCORE: Self = Self::UpperUnderscore;
-
     /// Returns all supported naming styles in the reference implementation
     /// order.
     ///
@@ -82,7 +73,7 @@ impl CaseStyle {
     ///
     /// Returns a static slice containing all naming styles.
     #[inline]
-    pub const fn values() -> &'static [Self; 5] {
+    pub const fn values() -> &'static [Self] {
         &VALUES
     }
 
@@ -147,12 +138,14 @@ impl CaseStyle {
     ///
     /// * `target` - Target naming style.
     /// * `value` - Source string. It should be an ASCII identifier in this
-    ///   style; if it is not, conversion is best-effort.
+    ///   style. Invalid input is still converted on a best-effort basis.
     ///
     /// # Returns
     ///
     /// Returns the converted string. Empty input is returned as an empty
-    /// string.
+    /// string. This permissive method neither validates the source value nor
+    /// guarantees that invalid input will match the target style. Use
+    /// [`Self::checked_to`] when the source value must be validated first.
     pub fn to(self, target: Self, value: &str) -> String {
         if value.is_empty() || target == self {
             return value.to_string();
@@ -161,6 +154,46 @@ impl CaseStyle {
             return converted;
         }
         self.convert_by_words(target, value)
+    }
+
+    /// Validates that a string strictly matches this naming style.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - String to validate.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` when `value` is a non-empty ASCII identifier matching
+    /// this style. Returns `CaseStyleValidationError` carrying this style and
+    /// the original value otherwise.
+    pub fn validate(self, value: &str) -> Result<(), CaseStyleValidationError> {
+        if self.matches(value) {
+            Ok(())
+        } else {
+            Err(CaseStyleValidationError::new(self, value))
+        }
+    }
+
+    /// Converts a validated string from this style to the target style.
+    ///
+    /// # Parameters
+    ///
+    /// * `target` - Target naming style.
+    /// * `value` - Source string to validate and convert.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted string when `value` matches this source style.
+    /// Returns `CaseStyleValidationError` without converting when validation
+    /// fails.
+    pub fn checked_to(
+        self,
+        target: Self,
+        value: &str,
+    ) -> Result<String, CaseStyleValidationError> {
+        self.validate(value)?;
+        Ok(self.to(target, value))
     }
 
     /// Tests whether a string strictly matches this naming style.
@@ -178,17 +211,26 @@ impl CaseStyle {
             return false;
         }
         match self {
-            Self::LowerHyphen => {
-                matches_separated(value, b'-', is_ascii_lower_or_digit)
-            }
-            Self::LowerUnderscore => {
-                matches_separated(value, b'_', is_ascii_lower_or_digit)
-            }
+            Self::LowerHyphen => matches_separated(
+                value,
+                b'-',
+                is_ascii_lower,
+                is_ascii_lower_or_digit,
+            ),
+            Self::LowerUnderscore => matches_separated(
+                value,
+                b'_',
+                is_ascii_lower,
+                is_ascii_lower_or_digit,
+            ),
             Self::LowerCamel => matches_camel(value, is_ascii_lower),
             Self::UpperCamel => matches_camel(value, is_ascii_upper),
-            Self::UpperUnderscore => {
-                matches_separated(value, b'_', is_ascii_upper_or_digit)
-            }
+            Self::UpperUnderscore => matches_separated(
+                value,
+                b'_',
+                is_ascii_upper,
+                is_ascii_upper_or_digit,
+            ),
         }
     }
 
@@ -209,7 +251,7 @@ impl CaseStyle {
                 Some(value.replace('-', "_"))
             }
             (Self::LowerHyphen, Self::UpperUnderscore) => {
-                Some(value.replace('-', "_").to_ascii_uppercase())
+                Some(replace_and_change_ascii_case(value, '-', '_', true))
             }
             (Self::LowerUnderscore, Self::LowerHyphen) => {
                 Some(value.replace('_', "-"))
@@ -218,7 +260,7 @@ impl CaseStyle {
                 Some(value.to_ascii_uppercase())
             }
             (Self::UpperUnderscore, Self::LowerHyphen) => {
-                Some(value.replace('_', "-").to_ascii_lowercase())
+                Some(replace_and_change_ascii_case(value, '_', '-', false))
             }
             (Self::UpperUnderscore, Self::LowerUnderscore) => {
                 Some(value.to_ascii_lowercase())
@@ -253,9 +295,9 @@ impl CaseStyle {
             }
             let word = &value[word_start..boundary];
             if word_start == 0 {
-                out.push_str(&target.normalize_first_word(word));
+                target.push_normalized_first_word(&mut out, word);
             } else {
-                out.push_str(&target.normalize_word(word));
+                target.push_normalized_word(&mut out, word);
             }
             out.push_str(target.word_separator());
             has_boundary = true;
@@ -263,10 +305,11 @@ impl CaseStyle {
             search_start = boundary + self.word_separator().len().max(1);
         }
         if !has_boundary {
-            target.normalize_first_word(value)
+            target.push_normalized_first_word(&mut out, value);
+            out
         } else {
             let word = &value[word_start..];
-            out.push_str(&target.normalize_word(word));
+            target.push_normalized_word(&mut out, word);
             out
         }
     }
@@ -294,41 +337,51 @@ impl CaseStyle {
         }
     }
 
-    /// Normalizes a non-first word for this naming style.
+    /// Appends a normalized non-first word for this naming style.
     ///
     /// # Parameters
     ///
+    /// * `out` - Destination string.
     /// * `word` - Source word to normalize.
-    ///
-    /// # Returns
-    ///
-    /// Returns the word normalized for this style.
-    fn normalize_word(self, word: &str) -> String {
+    fn push_normalized_word(self, out: &mut String, word: &str) {
         match self {
             Self::LowerHyphen | Self::LowerUnderscore => {
-                word.to_ascii_lowercase()
+                push_ascii_case(out, word, false);
             }
             Self::LowerCamel | Self::UpperCamel => {
-                first_char_only_to_upper(word)
+                push_first_char_only_to_upper(out, word);
             }
-            Self::UpperUnderscore => word.to_ascii_uppercase(),
+            Self::UpperUnderscore => push_ascii_case(out, word, true),
         }
     }
 
-    /// Normalizes the first word for this naming style.
+    /// Appends a normalized first word for this naming style.
     ///
     /// # Parameters
     ///
+    /// * `out` - Destination string.
     /// * `word` - First source word to normalize.
+    fn push_normalized_first_word(self, out: &mut String, word: &str) {
+        match self {
+            Self::LowerCamel => push_ascii_case(out, word, false),
+            _ => self.push_normalized_word(out, word),
+        }
+    }
+}
+
+impl fmt::Display for CaseStyle {
+    /// Formats this naming style using its canonical name.
+    ///
+    /// # Parameters
+    ///
+    /// * `f` - Formatter receiving the canonical name.
     ///
     /// # Returns
     ///
-    /// Returns the first word normalized for this style.
-    fn normalize_first_word(self, word: &str) -> String {
-        match self {
-            Self::LowerCamel => word.to_ascii_lowercase(),
-            _ => self.normalize_word(word),
-        }
+    /// Returns the formatter result.
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.name())
     }
 }
 
@@ -476,24 +529,71 @@ fn char_type(byte: u8) -> CharType {
     }
 }
 
-/// Converts a word to upper camel capitalization.
+/// Appends a word using upper camel capitalization.
 ///
 /// # Parameters
 ///
+/// * `out` - Destination string.
 /// * `word` - Source word to normalize.
+///
+/// Appends the word with its first ASCII character uppercased and remaining
+/// ASCII characters lowercased.
+fn push_first_char_only_to_upper(out: &mut String, word: &str) {
+    let mut chars = word.chars();
+    let Some(first) = chars.next() else {
+        return;
+    };
+    out.push(first.to_ascii_uppercase());
+    push_ascii_case(out, chars.as_str(), false);
+}
+
+/// Appends a string after converting its ASCII character case.
+///
+/// # Parameters
+///
+/// * `out` - Destination string.
+/// * `value` - Source string.
+/// * `uppercase` - Whether ASCII characters are uppercased rather than
+///   lowercased.
+fn push_ascii_case(out: &mut String, value: &str, uppercase: bool) {
+    out.extend(value.chars().map(|ch| {
+        if uppercase {
+            ch.to_ascii_uppercase()
+        } else {
+            ch.to_ascii_lowercase()
+        }
+    }));
+}
+
+/// Replaces one character and converts ASCII character case in one pass.
+///
+/// # Parameters
+///
+/// * `value` - Source string.
+/// * `from` - Character to replace.
+/// * `to` - Replacement character.
+/// * `uppercase` - Whether other ASCII characters are uppercased rather than
+///   lowercased.
 ///
 /// # Returns
 ///
-/// Returns the word with its first ASCII character uppercased and remaining
-/// ASCII characters lowercased.
-fn first_char_only_to_upper(word: &str) -> String {
-    let mut chars = word.chars();
-    let Some(first) = chars.next() else {
-        return String::new();
-    };
-    let mut out = String::with_capacity(word.len());
-    out.push(first.to_ascii_uppercase());
-    out.push_str(&chars.as_str().to_ascii_lowercase());
+/// Returns a newly allocated string produced in one traversal of `value`.
+fn replace_and_change_ascii_case(
+    value: &str,
+    from: char,
+    to: char,
+    uppercase: bool,
+) -> String {
+    let mut out = String::with_capacity(value.len());
+    out.extend(value.chars().map(|ch| {
+        if ch == from {
+            to
+        } else if uppercase {
+            ch.to_ascii_uppercase()
+        } else {
+            ch.to_ascii_lowercase()
+        }
+    }));
     out
 }
 
@@ -503,6 +603,7 @@ fn first_char_only_to_upper(word: &str) -> String {
 ///
 /// * `value` - String to test.
 /// * `separator` - Required ASCII separator byte.
+/// * `is_valid_first` - Predicate for the required first byte.
 /// * `is_word_byte` - Predicate for valid non-separator bytes.
 ///
 /// # Returns
@@ -512,10 +613,14 @@ fn first_char_only_to_upper(word: &str) -> String {
 fn matches_separated(
     value: &str,
     separator: u8,
+    is_valid_first: fn(u8) -> bool,
     is_word_byte: fn(u8) -> bool,
 ) -> bool {
     let bytes = value.as_bytes();
-    if bytes.first() == Some(&separator) || bytes.last() == Some(&separator) {
+    let Some(first) = bytes.first() else {
+        return false;
+    };
+    if !is_valid_first(*first) || bytes.last() == Some(&separator) {
         return false;
     }
     let mut last_is_separator = false;

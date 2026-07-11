@@ -9,6 +9,7 @@ use std::str::FromStr;
 
 use qubit_case::{
     CaseStyle,
+    CaseStyleValidationError,
     LOWER_CAMEL,
     LOWER_HYPHEN,
     LOWER_UNDERSCORE,
@@ -195,4 +196,96 @@ fn test_matches_rejects_invalid_style_examples() {
     assert!(!UPPER_CAMEL.matches("Upper_Camel"));
     assert!(!UPPER_UNDERSCORE.matches("upper_underscore"));
     assert!(!UPPER_UNDERSCORE.matches("UPPER__UNDERSCORE"));
+}
+
+#[test]
+fn test_matches_rejects_digit_as_first_character() {
+    assert!(!LOWER_HYPHEN.matches("123-lower"));
+    assert!(!LOWER_UNDERSCORE.matches("123_lower"));
+    assert!(!UPPER_UNDERSCORE.matches("123_UPPER"));
+}
+
+#[test]
+fn test_validate_reports_style_and_value_for_invalid_input() {
+    assert_eq!(LOWER_CAMEL.validate("lowerCamel123"), Ok(()));
+
+    let error = LOWER_CAMEL
+        .validate("UpperCamel")
+        .expect_err("an uppercase initial should fail lower-camel validation");
+    assert_eq!(error.style(), LOWER_CAMEL);
+    assert_eq!(error.value(), "UpperCamel");
+    assert_eq!(
+        error,
+        CaseStyleValidationError::new(LOWER_CAMEL, "UpperCamel"),
+    );
+    assert_eq!(
+        error.to_string(),
+        "Value 'UpperCamel' does not match case style 'lower-camel'.",
+    );
+}
+
+#[test]
+fn test_checked_to_validates_source_before_conversion() {
+    assert_eq!(
+        LOWER_CAMEL.checked_to(UPPER_UNDERSCORE, "http2Client"),
+        Ok("HTTP_2_CLIENT".to_string()),
+    );
+
+    let error = LOWER_CAMEL
+        .checked_to(UPPER_UNDERSCORE, "HTTP2Client")
+        .expect_err("invalid lower-camel input should not be converted");
+    assert_eq!(error.style(), LOWER_CAMEL);
+    assert_eq!(error.value(), "HTTP2Client");
+}
+
+#[test]
+fn test_to_remains_permissive_for_invalid_source_input() {
+    assert_eq!(
+        LOWER_HYPHEN.to(LOWER_UNDERSCORE, "UPPER-HYPHEN"),
+        "UPPER_HYPHEN",
+    );
+}
+
+#[test]
+fn test_checked_to_produces_values_matching_every_target_style() {
+    let valid_values = [
+        (LOWER_HYPHEN, "http-2-client"),
+        (LOWER_UNDERSCORE, "http_2_client"),
+        (LOWER_CAMEL, "http2Client"),
+        (UPPER_CAMEL, "HTTP2Client"),
+        (UPPER_UNDERSCORE, "HTTP_2_CLIENT"),
+    ];
+
+    for (source, value) in valid_values {
+        for target in CaseStyle::values() {
+            let converted = source
+                .checked_to(*target, value)
+                .expect("the source fixture should be valid");
+            assert!(
+                target.matches(&converted),
+                "{value:?} converted from {} to {} as {converted:?}",
+                source.name(),
+                target.name(),
+            );
+        }
+    }
+}
+
+#[test]
+fn test_style_name_round_trips_through_from_str() {
+    for style in CaseStyle::values() {
+        assert_eq!(CaseStyle::from_str(style.name()), Ok(*style));
+    }
+}
+
+#[test]
+fn test_display_returns_canonical_style_name() {
+    for style in CaseStyle::values() {
+        assert_eq!(style.to_string(), style.name());
+    }
+}
+
+#[test]
+fn test_to_handles_non_ascii_input_without_panicking() {
+    assert_eq!(UPPER_CAMEL.to(LOWER_HYPHEN, "ÉclairHTTP"), "Éclair-http",);
 }

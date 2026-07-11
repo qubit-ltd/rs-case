@@ -11,11 +11,11 @@
 
 ## 概述
 
-Qubit Naming Style 用于在 Java、C++、Python、XML、JSON 和 Rust 工具链常见的 ASCII 标识符命名风格之间转换，提供紧凑的 Rust 枚举 API。
+Qubit Case 用于在 Java、C++、Python、XML、JSON 和 Rust 工具链常见的 ASCII 标识符命名风格之间转换，提供紧凑的 Rust 枚举 API。
 
 ## 设计目标
 
-- **小型 API 表面**：只暴露一个 `CaseStyle` 枚举和五个常量。
+- **小型 API 表面**：公开一个核心 `CaseStyle` 枚举、五个便捷常量，以及职责明确的解析和校验错误类型。
 - **一致行为**：对受支持的 ASCII 标识符转换保持稳定，兼容常见命名风格。
 - **严格匹配**：检测字符串是否符合某种命名风格。
 - **尽力转换**：即使输入并不严格符合源风格，也会尽量给出转换结果。
@@ -50,10 +50,17 @@ use qubit_case::{
 let value = LOWER_HYPHEN.to(LOWER_CAMEL, "hello-world");
 assert_eq!(value, "helloWorld");
 
-let constant = LOWER_CAMEL.to(UPPER_UNDERSCORE, "http2Client");
+LOWER_CAMEL
+    .validate("http2Client")
+    .expect("该字符串应符合小驼峰命名风格");
+
+let constant = LOWER_CAMEL
+    .checked_to(UPPER_UNDERSCORE, "http2Client")
+    .expect("源字符串应符合指定命名风格");
 assert_eq!(constant, "HTTP_2_CLIENT");
 
 assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
+assert_eq!(LOWER_CAMEL.to_string(), "lower-camel");
 ```
 
 ## API 参考
@@ -64,6 +71,8 @@ assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
   支持的命名风格和转换方法。
 - [`CaseStyleError`](https://docs.rs/qubit-case/latest/qubit_case/struct.CaseStyleError.html) -
   解析未知风格名称时返回的错误。
+- [`CaseStyleValidationError`](https://docs.rs/qubit-case/latest/qubit_case/struct.CaseStyleValidationError.html) -
+  字符串不符合预期命名风格时返回的错误。
 
 ### 常量
 
@@ -79,12 +88,19 @@ assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
 - `CaseStyle::of(name)` 解析风格名称，忽略大小写，并把连字符和下划线视为等价。
 - `CaseStyle::name()` 返回规范的小写连字符风格名称。
 - `CaseStyle::word_separator()` 返回该风格使用的单词分隔符。
-- `CaseStyle::to(target, value)` 把标识符转换为目标风格。
+- `CaseStyle::to(target, value)` 执行宽松的尽力转换；它不校验源字符串，也不保证非法输入符合目标风格。
+- `CaseStyle::validate(value)` 校验标识符，不符合该风格时返回错误。
+- `CaseStyle::checked_to(target, value)` 校验源字符串后再转换。
 - `CaseStyle::matches(value)` 检查标识符是否严格符合该风格。
+
+### Trait 实现
+
+- `Display` 使用规范的小写连字符名称格式化命名风格。
+- `FromStr` 解析 `CaseStyle::of` 所接受的风格名称。
 
 ## 测试与代码覆盖率
 
-本项目覆盖成功转换、风格解析、风格匹配、CamelCase 缩写边界、数字边界、空输入和尽力转换行为。
+本项目覆盖成功转换和校验后转换、校验错误、风格解析和格式化、风格匹配、CamelCase 缩写边界、数字边界、空输入、Unicode 安全性和尽力转换行为。
 
 ### 运行测试
 
