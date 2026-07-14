@@ -40,7 +40,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-qubit-case = "0.1"
+qubit-case = "0.2"
 ```
 
 ## Quick Start
