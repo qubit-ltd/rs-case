@@ -13,6 +13,7 @@
 mod case_style;
 mod case_style_error;
 mod case_style_validation_error;
+mod internal;
 
 pub use case_style_error::CaseStyleError;
 pub use case_style_validation_error::CaseStyleValidationError;

@@ -16,7 +16,10 @@ use crate::CaseStyle;
 /// Error returned when a value does not match an expected case style.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CaseStyleValidationError {
+    /// Case style against which the value was validated.
     style: CaseStyle,
+
+    /// Original value that failed validation.
     value: String,
 }
 
@@ -31,6 +34,7 @@ impl CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns a new error carrying the expected style and original value.
+    #[must_use]
     #[inline]
     pub fn new(style: CaseStyle, value: impl Into<String>) -> Self {
         Self {
@@ -44,7 +48,7 @@ impl CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns the style used to validate the value.
-    #[inline]
+    #[inline(always)]
     pub const fn style(&self) -> CaseStyle {
         self.style
     }
@@ -55,7 +59,8 @@ impl CaseStyleValidationError {
     ///
     /// Returns the original value passed to `CaseStyle::validate` or
     /// `CaseStyle::checked_to`.
-    #[inline]
+    #[must_use]
+    #[inline(always)]
     pub fn value(&self) -> &str {
         &self.value
     }
@@ -71,6 +76,7 @@ impl fmt::Display for CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns the formatter result.
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

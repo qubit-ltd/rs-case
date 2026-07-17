@@ -14,6 +14,7 @@ use std::fmt;
 /// Error returned when a case style name is unknown.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CaseStyleError {
+    /// Original case style name that could not be parsed.
     name: String,
 }
 
@@ -27,6 +28,7 @@ impl CaseStyleError {
     /// # Returns
     ///
     /// Returns a new error carrying the original name.
+    #[must_use]
     #[inline]
     pub fn new(name: impl Into<String>) -> Self {
         Self { name: name.into() }
@@ -37,7 +39,8 @@ impl CaseStyleError {
     /// # Returns
     ///
     /// Returns the original name passed to `CaseStyle::of` or `FromStr`.
-    #[inline]
+    #[must_use]
+    #[inline(always)]
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -53,6 +56,7 @@ impl fmt::Display for CaseStyleError {
     /// # Returns
     ///
     /// Returns the formatter result.
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unknown case style: '{}'.", self.name)
     }

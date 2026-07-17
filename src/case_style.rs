@@ -9,6 +9,19 @@
 //!
 //! Defines ASCII identifier naming styles and conversion helpers.
 
+use crate::internal::{
+    find_first_byte,
+    find_first_camel_case_boundary,
+    is_ascii_lower,
+    is_ascii_lower_or_digit,
+    is_ascii_upper,
+    is_ascii_upper_or_digit,
+    matches_camel,
+    matches_separated,
+    push_ascii_case,
+    push_first_char_only_to_upper,
+    replace_and_change_ascii_case,
+};
 use crate::{
     CaseStyleError,
     CaseStyleValidationError,
@@ -47,6 +60,7 @@ const VALUES: [CaseStyle; 5] = [
 /// The conversion rules are intended for ASCII identifiers. Non-ASCII input is
 /// accepted on a best-effort basis, but its exact conversion behavior is not a
 /// stable contract.
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CaseStyle {
     /// Hyphen separated lowercase words, such as `lower-hyphen`.
@@ -66,17 +80,6 @@ pub enum CaseStyle {
 }
 
 impl CaseStyle {
-    /// Returns all supported naming styles in the reference implementation
-    /// order.
-    ///
-    /// # Returns
-    ///
-    /// Returns a static slice containing all naming styles.
-    #[inline]
-    pub const fn values() -> &'static [Self] {
-        &VALUES
-    }
-
     /// Parses a naming style from its canonical name.
     ///
     /// The comparison is case-insensitive, and hyphen and underscore are
@@ -88,8 +91,12 @@ impl CaseStyle {
     ///
     /// # Returns
     ///
-    /// Returns the parsed naming style, or `CaseStyleError` carrying the
-    /// original name when no style matches.
+    /// Returns the parsed naming style.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CaseStyleError`] carrying the original name when no supported
+    /// style matches it.
     pub fn of(name: &str) -> Result<Self, CaseStyleError> {
         let normalized_name = name.replace('_', "-").to_ascii_lowercase();
         for style in Self::values() {
@@ -100,13 +107,25 @@ impl CaseStyle {
         Err(CaseStyleError::new(name))
     }
 
+    /// Returns all supported naming styles in the reference implementation
+    /// order.
+    ///
+    /// # Returns
+    ///
+    /// Returns a static slice containing all naming styles.
+    #[inline(always)]
+    pub const fn values() -> &'static [Self] {
+        &VALUES
+    }
+
     /// Returns the canonical name of this naming style.
     ///
     /// # Returns
     ///
     /// Returns the lower-hyphen style name used by the JavaScript reference
     /// implementation.
-    #[inline]
+    #[must_use]
+    #[inline(always)]
     pub const fn name(self) -> &'static str {
         match self {
             Self::LowerHyphen => "lower-hyphen",
@@ -123,7 +142,8 @@ impl CaseStyle {
     ///
     /// Returns `"-"` for lower hyphen, `"_"` for underscore styles, and `""`
     /// for camel case styles.
-    #[inline]
+    #[must_use]
+    #[inline(always)]
     pub const fn word_separator(self) -> &'static str {
         match self {
             Self::LowerHyphen => "-",
@@ -146,6 +166,7 @@ impl CaseStyle {
     /// string. This permissive method neither validates the source value nor
     /// guarantees that invalid input will match the target style. Use
     /// [`Self::checked_to`] when the source value must be validated first.
+    #[must_use]
     pub fn to(self, target: Self, value: &str) -> String {
         if value.is_empty() || target == self {
             return value.to_string();
@@ -165,8 +186,13 @@ impl CaseStyle {
     /// # Returns
     ///
     /// Returns `Ok(())` when `value` is a non-empty ASCII identifier matching
-    /// this style. Returns `CaseStyleValidationError` carrying this style and
-    /// the original value otherwise.
+    /// this style.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CaseStyleValidationError`] carrying this style and the
+    /// original value when `value` is empty, contains unsupported bytes, or
+    /// otherwise violates this style's identifier rules.
     pub fn validate(self, value: &str) -> Result<(), CaseStyleValidationError> {
         if self.matches(value) {
             Ok(())
@@ -185,8 +211,12 @@ impl CaseStyle {
     /// # Returns
     ///
     /// Returns the converted string when `value` matches this source style.
-    /// Returns `CaseStyleValidationError` without converting when validation
-    /// fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CaseStyleValidationError`] carrying this source style and the
+    /// original value when validation fails. The value is not converted in
+    /// that case.
     pub fn checked_to(
         self,
         target: Self,
@@ -206,6 +236,7 @@ impl CaseStyle {
     ///
     /// Returns `true` if `value` is non-empty and follows this style's ASCII
     /// identifier rules; otherwise returns `false`.
+    #[must_use]
     pub fn matches(self, value: &str) -> bool {
         if value.is_empty() {
             return false;
@@ -280,6 +311,7 @@ impl CaseStyle {
     /// # Returns
     ///
     /// Returns a best-effort converted string.
+    #[must_use]
     fn convert_by_words(self, target: Self, value: &str) -> String {
         let mut out = String::with_capacity(
             value.len() + 4 * target.word_separator().len(),
@@ -325,6 +357,7 @@ impl CaseStyle {
     ///
     /// Returns the byte index of the next boundary, or `None` when no boundary
     /// exists after `start`.
+    #[inline(always)]
     fn find_boundary(self, value: &str, start: usize) -> Option<usize> {
         match self {
             Self::LowerHyphen => find_first_byte(value, start, b'-'),
@@ -379,7 +412,7 @@ impl fmt::Display for CaseStyle {
     /// # Returns
     ///
     /// Returns the formatter result.
-    #[inline]
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.name())
     }
@@ -396,348 +429,14 @@ impl FromStr for CaseStyle {
     ///
     /// # Returns
     ///
-    /// Returns the parsed style, or `CaseStyleError` when `s` is unknown.
-    #[inline]
+    /// Returns the parsed style.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CaseStyleError`] carrying `s` when it does not name a
+    /// supported style.
+    #[inline(always)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::of(s)
     }
-}
-
-/// Finds the first occurrence of a byte from a start index.
-///
-/// # Parameters
-///
-/// * `value` - String to search.
-/// * `start` - Byte index where the search starts.
-/// * `needle` - ASCII byte to find.
-///
-/// # Returns
-///
-/// Returns the byte index of `needle`, or `None` if it is not found.
-fn find_first_byte(value: &str, start: usize, needle: u8) -> Option<usize> {
-    value
-        .as_bytes()
-        .iter()
-        .enumerate()
-        .skip(start)
-        .find_map(|(index, byte)| (*byte == needle).then_some(index))
-}
-
-/// Finds the next CamelCase word boundary.
-///
-/// # Parameters
-///
-/// * `value` - String to search.
-/// * `start` - Byte index where the search starts.
-///
-/// # Returns
-///
-/// Returns the byte index of the next CamelCase boundary, or `None` if no
-/// boundary exists.
-fn find_first_camel_case_boundary(value: &str, start: usize) -> Option<usize> {
-    let start = start.max(1);
-    value
-        .as_bytes()
-        .iter()
-        .enumerate()
-        .skip(start)
-        .find_map(|(index, _)| {
-            is_camel_case_word_boundary(value, index).then_some(index)
-        })
-}
-
-/// Tests whether an index is a CamelCase word boundary.
-///
-/// # Parameters
-///
-/// * `value` - String to test.
-/// * `index` - Byte index to examine.
-///
-/// # Returns
-///
-/// Returns `true` if `index` is a boundary according to the JavaScript
-/// reference finite-state rules; otherwise returns `false`.
-fn is_camel_case_word_boundary(value: &str, index: usize) -> bool {
-    let bytes = value.as_bytes();
-    if index == 0 || index >= bytes.len() {
-        return false;
-    }
-    let current_type = char_type(bytes[index]);
-    if current_type == CharType::Other {
-        return false;
-    }
-    let previous_type = char_type(bytes[index - 1]);
-    match previous_type {
-        CharType::Lower => {
-            current_type == CharType::Upper || current_type == CharType::Digit
-        }
-        CharType::Upper => {
-            if current_type == CharType::Lower {
-                false
-            } else if current_type == CharType::Digit {
-                true
-            } else if current_type == CharType::Upper {
-                let next = bytes
-                    .get(index + 1)
-                    .copied()
-                    .map(char_type)
-                    .unwrap_or(CharType::Other);
-                next == CharType::Lower
-            } else {
-                false
-            }
-        }
-        CharType::Digit => current_type == CharType::Upper,
-        CharType::Other => false,
-    }
-}
-
-/// ASCII character classes used by CamelCase boundary detection.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CharType {
-    /// ASCII uppercase letter.
-    Upper,
-
-    /// ASCII lowercase letter.
-    Lower,
-
-    /// ASCII decimal digit.
-    Digit,
-
-    /// Any other byte.
-    Other,
-}
-
-/// Classifies an ASCII byte.
-///
-/// # Parameters
-///
-/// * `byte` - Byte to classify.
-///
-/// # Returns
-///
-/// Returns the character class used by the boundary detector.
-fn char_type(byte: u8) -> CharType {
-    if is_ascii_upper(byte) {
-        CharType::Upper
-    } else if is_ascii_lower(byte) {
-        CharType::Lower
-    } else if is_ascii_digit(byte) {
-        CharType::Digit
-    } else {
-        CharType::Other
-    }
-}
-
-/// Appends a word using upper camel capitalization.
-///
-/// # Parameters
-///
-/// * `out` - Destination string.
-/// * `word` - Source word to normalize.
-///
-/// Appends the word with its first ASCII character uppercased and remaining
-/// ASCII characters lowercased.
-fn push_first_char_only_to_upper(out: &mut String, word: &str) {
-    let mut chars = word.chars();
-    let Some(first) = chars.next() else {
-        return;
-    };
-    out.push(first.to_ascii_uppercase());
-    push_ascii_case(out, chars.as_str(), false);
-}
-
-/// Appends a string after converting its ASCII character case.
-///
-/// # Parameters
-///
-/// * `out` - Destination string.
-/// * `value` - Source string.
-/// * `uppercase` - Whether ASCII characters are uppercased rather than
-///   lowercased.
-fn push_ascii_case(out: &mut String, value: &str, uppercase: bool) {
-    out.extend(value.chars().map(|ch| {
-        if uppercase {
-            ch.to_ascii_uppercase()
-        } else {
-            ch.to_ascii_lowercase()
-        }
-    }));
-}
-
-/// Replaces one character and converts ASCII character case in one pass.
-///
-/// # Parameters
-///
-/// * `value` - Source string.
-/// * `from` - Character to replace.
-/// * `to` - Replacement character.
-/// * `uppercase` - Whether other ASCII characters are uppercased rather than
-///   lowercased.
-///
-/// # Returns
-///
-/// Returns a newly allocated string produced in one traversal of `value`.
-fn replace_and_change_ascii_case(
-    value: &str,
-    from: char,
-    to: char,
-    uppercase: bool,
-) -> String {
-    let mut out = String::with_capacity(value.len());
-    out.extend(value.chars().map(|ch| {
-        if ch == from {
-            to
-        } else if uppercase {
-            ch.to_ascii_uppercase()
-        } else {
-            ch.to_ascii_lowercase()
-        }
-    }));
-    out
-}
-
-/// Tests whether a separated style string matches all separator rules.
-///
-/// # Parameters
-///
-/// * `value` - String to test.
-/// * `separator` - Required ASCII separator byte.
-/// * `is_valid_first` - Predicate for the required first byte.
-/// * `is_word_byte` - Predicate for valid non-separator bytes.
-///
-/// # Returns
-///
-/// Returns `true` if `value` has no leading, trailing, or repeated separators
-/// and every word byte satisfies `is_word_byte`.
-fn matches_separated(
-    value: &str,
-    separator: u8,
-    is_valid_first: fn(u8) -> bool,
-    is_word_byte: fn(u8) -> bool,
-) -> bool {
-    let bytes = value.as_bytes();
-    let Some(first) = bytes.first() else {
-        return false;
-    };
-    if !is_valid_first(*first) || bytes.last() == Some(&separator) {
-        return false;
-    }
-    let mut last_is_separator = false;
-    for byte in bytes {
-        if *byte == separator {
-            if last_is_separator {
-                return false;
-            }
-            last_is_separator = true;
-        } else if is_word_byte(*byte) {
-            last_is_separator = false;
-        } else {
-            return false;
-        }
-    }
-    true
-}
-
-/// Tests whether a camel style string matches the first character rule.
-///
-/// # Parameters
-///
-/// * `value` - String to test.
-/// * `is_valid_first` - Predicate for the required first byte.
-///
-/// # Returns
-///
-/// Returns `true` if the first byte satisfies `is_valid_first` and all
-/// following bytes are ASCII letters or digits.
-fn matches_camel(value: &str, is_valid_first: fn(u8) -> bool) -> bool {
-    let bytes = value.as_bytes();
-    if !is_valid_first(bytes[0]) {
-        return false;
-    }
-    bytes.iter().skip(1).all(|byte| is_ascii_alnum(*byte))
-}
-
-/// Tests whether a byte is an ASCII lowercase letter.
-///
-/// # Parameters
-///
-/// * `byte` - Byte to test.
-///
-/// # Returns
-///
-/// Returns `true` for `a` through `z`.
-#[inline]
-fn is_ascii_lower(byte: u8) -> bool {
-    byte.is_ascii_lowercase()
-}
-
-/// Tests whether a byte is an ASCII uppercase letter.
-///
-/// # Parameters
-///
-/// * `byte` - Byte to test.
-///
-/// # Returns
-///
-/// Returns `true` for `A` through `Z`.
-#[inline]
-fn is_ascii_upper(byte: u8) -> bool {
-    byte.is_ascii_uppercase()
-}
-
-/// Tests whether a byte is an ASCII decimal digit.
-///
-/// # Parameters
-///
-/// * `byte` - Byte to test.
-///
-/// # Returns
-///
-/// Returns `true` for `0` through `9`.
-#[inline]
-fn is_ascii_digit(byte: u8) -> bool {
-    byte.is_ascii_digit()
-}
-
-/// Tests whether a byte is an ASCII letter or digit.
-///
-/// # Parameters
-///
-/// * `byte` - Byte to test.
-///
-/// # Returns
-///
-/// Returns `true` for ASCII letters or decimal digits.
-#[inline]
-fn is_ascii_alnum(byte: u8) -> bool {
-    byte.is_ascii_alphanumeric()
-}
-
-/// Tests whether a byte is an ASCII lowercase letter or digit.
-///
-/// # Parameters
-///
-/// * `byte` - Byte to test.
-///
-/// # Returns
-///
-/// Returns `true` for lowercase ASCII letters or decimal digits.
-#[inline]
-fn is_ascii_lower_or_digit(byte: u8) -> bool {
-    is_ascii_lower(byte) || is_ascii_digit(byte)
-}
-
-/// Tests whether a byte is an ASCII uppercase letter or digit.
-///
-/// # Parameters
-///
-/// * `byte` - Byte to test.
-///
-/// # Returns
-///
-/// Returns `true` for uppercase ASCII letters or decimal digits.
-#[inline]
-fn is_ascii_upper_or_digit(byte: u8) -> bool {
-    is_ascii_upper(byte) || is_ascii_digit(byte)
 }
