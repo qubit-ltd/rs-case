@@ -98,69 +98,36 @@ assert_eq!(LOWER_CAMEL.to_string(), "lower-camel");
 - `Display` 使用规范的小写连字符名称格式化命名风格。
 - `FromStr` 解析 `CaseStyle::of` 所接受的风格名称。
 
-## 测试与代码覆盖率
-
-本项目覆盖成功转换和校验后转换、校验错误、风格解析和格式化、风格匹配、CamelCase 缩写边界、数字边界、空输入、Unicode 安全性和尽力转换行为。
-
-### 运行测试
+## 测试
 
 ```bash
-# 运行所有测试
-cargo test
+# 使用默认的空 feature 集测试核心 API
+cargo test --no-default-features
 
-# 运行覆盖率报告
-./coverage.sh
+# 测试核心 API 和正则校验
+cargo test --all-features
 
-# 生成文本格式报告
-./coverage.sh text
-
-# 运行 CI 检查（格式化、clippy、测试、覆盖率、audit）
+# 运行项目 CI 检查
 ./ci-check.sh
+
+# 检查代码覆盖率
+./coverage.sh
 ```
-
-### 覆盖率指标
-
-详细的覆盖率统计请参见 [COVERAGE.zh_CN.md](COVERAGE.zh_CN.md)。
-
-## 依赖项
-
-本 crate 没有运行时依赖。
 
 ## 许可证
 
-Copyright (c) 2025 - 2026. Haixing Hu.
+Copyright (c) 2025 - 2026. Haixing Hu. All rights reserved.
 
-根据 Apache 许可证 2.0 版（"许可证"）授权；
-除非遵守许可证，否则您不得使用此文件。
-您可以在以下位置获取许可证副本：
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-除非适用法律要求或书面同意，否则根据许可证分发的软件
-按"原样"分发，不附带任何明示或暗示的担保或条件。
-有关许可证下的特定语言管理权限和限制，请参阅许可证。
-
-完整的许可证文本请参阅 [LICENSE](LICENSE)。
+本项目基于 Apache License 2.0 授权。完整许可证文本请参阅
+[LICENSE](LICENSE)。
 
 ## 贡献
 
-欢迎贡献！请随时提交 Pull Request。
-
-### 开发指南
-
-- 遵循 Rust API 指南。
-- 保持全面的测试覆盖。
-- 在文档能帮助理解时，为公共 API 提供示例。
-- 提交 PR 前运行 `./ci-check.sh`。
+欢迎贡献。请遵循 Rust API 指南，及时更新公共 API 文档与测试，并在提交
+Pull Request 前运行 `./align-ci.sh`格式化代码，运行`./ci-check.sh`对齐CI要求。
 
 ## 作者
 
-Haixing Hu
-
-## 相关项目
-
-Qubit 旗下的更多 Rust 库发布在 GitHub 组织 [qubit-ltd](https://github.com/qubit-ltd)。
-
----
+**Haixing Hu** - *Qubit Co. Ltd.*
 
 仓库地址：[https://github.com/qubit-ltd/rs-case](https://github.com/qubit-ltd/rs-case)
