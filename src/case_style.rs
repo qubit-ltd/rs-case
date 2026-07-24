@@ -97,6 +97,7 @@ impl CaseStyle {
     ///
     /// Returns [`CaseStyleError`] carrying the original name when no supported
     /// style matches it.
+    #[must_use = "handle the parsing result"]
     pub fn of(name: &str) -> Result<Self, CaseStyleError> {
         let normalized_name = name.replace('_', "-").to_ascii_lowercase();
         for style in Self::values() {
@@ -113,6 +114,7 @@ impl CaseStyle {
     /// # Returns
     ///
     /// Returns a static slice containing all naming styles.
+    #[must_use = "use the supported naming styles"]
     #[inline(always)]
     pub const fn values() -> &'static [Self] {
         &VALUES
@@ -166,7 +168,7 @@ impl CaseStyle {
     /// string. This permissive method neither validates the source value nor
     /// guarantees that invalid input will match the target style. Use
     /// [`Self::checked_to`] when the source value must be validated first.
-    #[must_use]
+    #[must_use = "use the converted value"]
     pub fn to(self, target: Self, value: &str) -> String {
         if value.is_empty() || target == self {
             return value.to_string();
@@ -193,6 +195,7 @@ impl CaseStyle {
     /// Returns [`CaseStyleValidationError`] carrying this style and the
     /// original value when `value` is empty, contains unsupported bytes, or
     /// otherwise violates this style's identifier rules.
+    #[must_use = "handle validation errors"]
     pub fn validate(self, value: &str) -> Result<(), CaseStyleValidationError> {
         if self.matches(value) {
             Ok(())
@@ -217,6 +220,7 @@ impl CaseStyle {
     /// Returns [`CaseStyleValidationError`] carrying this source style and the
     /// original value when validation fails. The value is not converted in
     /// that case.
+    #[must_use = "use the converted value or handle validation errors"]
     pub fn checked_to(
         self,
         target: Self,
@@ -276,6 +280,7 @@ impl CaseStyle {
     ///
     /// Returns `Some` converted string for optimized pairs, or `None` when the
     /// generic word conversion should be used.
+    #[must_use = "use the optimized conversion result"]
     fn quick_convert(self, target: Self, value: &str) -> Option<String> {
         match (self, target) {
             (Self::LowerHyphen, Self::LowerUnderscore) => {
@@ -357,6 +362,7 @@ impl CaseStyle {
     ///
     /// Returns the byte index of the next boundary, or `None` when no boundary
     /// exists after `start`.
+    #[must_use = "use the next word boundary"]
     #[inline(always)]
     fn find_boundary(self, value: &str, start: usize) -> Option<usize> {
         match self {

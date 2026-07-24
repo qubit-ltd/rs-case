@@ -20,6 +20,7 @@ use super::char_type::CharType;
 /// # Returns
 ///
 /// Returns the byte index of `needle`, or `None` if it is not found.
+#[must_use = "use the located separator or handle its absence"]
 pub(crate) fn find_first_byte(
     value: &str,
     start: usize,
@@ -44,6 +45,7 @@ pub(crate) fn find_first_byte(
 ///
 /// Returns the byte index of the next CamelCase boundary, or `None` if no
 /// boundary exists.
+#[must_use = "use the located boundary or handle its absence"]
 pub(crate) fn find_first_camel_case_boundary(
     value: &str,
     start: usize,

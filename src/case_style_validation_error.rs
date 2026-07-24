@@ -34,7 +34,7 @@ impl CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns a new error carrying the expected style and original value.
-    #[must_use]
+    #[must_use = "use the constructed validation error"]
     #[inline]
     pub fn new(style: CaseStyle, value: impl Into<String>) -> Self {
         Self {
@@ -48,6 +48,7 @@ impl CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns the style used to validate the value.
+    #[must_use = "use the expected case style"]
     #[inline(always)]
     pub const fn style(&self) -> CaseStyle {
         self.style
