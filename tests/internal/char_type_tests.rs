@@ -8,12 +8,10 @@
 //! Character-class effects on CamelCase splitting, observed through public
 //! APIs.
 
-use qubit_case::{
-    LOWER_CAMEL,
-    LOWER_HYPHEN,
-    UPPER_CAMEL,
-    UPPER_UNDERSCORE,
-};
+use qubit_case::LOWER_CAMEL;
+use qubit_case::LOWER_HYPHEN;
+use qubit_case::UPPER_CAMEL;
+use qubit_case::UPPER_UNDERSCORE;
 
 #[test]
 fn test_upper_to_lower_transition_starts_new_word() {

@@ -9,10 +9,8 @@
 
 use std::str::FromStr;
 
-use qubit_case::{
-    CaseStyle,
-    CaseStyleError,
-};
+use qubit_case::CaseStyle;
+use qubit_case::CaseStyleError;
 
 #[test]
 fn test_from_str_reports_unknown_style_name() {

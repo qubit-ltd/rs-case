@@ -9,14 +9,12 @@
 
 use std::str::FromStr;
 
-use qubit_case::{
-    CaseStyle,
-    LOWER_CAMEL,
-    LOWER_HYPHEN,
-    LOWER_UNDERSCORE,
-    UPPER_CAMEL,
-    UPPER_UNDERSCORE,
-};
+use qubit_case::CaseStyle;
+use qubit_case::LOWER_CAMEL;
+use qubit_case::LOWER_HYPHEN;
+use qubit_case::LOWER_UNDERSCORE;
+use qubit_case::UPPER_CAMEL;
+use qubit_case::UPPER_UNDERSCORE;
 
 #[test]
 fn test_values_returns_all_styles_in_reference_order() {

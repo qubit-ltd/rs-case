@@ -15,14 +15,11 @@ mod case_style_error;
 mod case_style_validation_error;
 mod internal;
 
+pub use case_style::CaseStyle;
+pub use case_style::LOWER_CAMEL;
+pub use case_style::LOWER_HYPHEN;
+pub use case_style::LOWER_UNDERSCORE;
+pub use case_style::UPPER_CAMEL;
+pub use case_style::UPPER_UNDERSCORE;
 pub use case_style_error::CaseStyleError;
 pub use case_style_validation_error::CaseStyleValidationError;
-
-pub use case_style::{
-    CaseStyle,
-    LOWER_CAMEL,
-    LOWER_HYPHEN,
-    LOWER_UNDERSCORE,
-    UPPER_CAMEL,
-    UPPER_UNDERSCORE,
-};

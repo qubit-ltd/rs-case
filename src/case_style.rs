@@ -9,28 +9,22 @@
 //!
 //! Defines ASCII identifier naming styles and conversion helpers.
 
-use crate::internal::{
-    find_first_byte,
-    find_first_camel_case_boundary,
-    is_ascii_lower,
-    is_ascii_lower_or_digit,
-    is_ascii_upper,
-    is_ascii_upper_or_digit,
-    matches_camel,
-    matches_separated,
-    push_ascii_case,
-    push_first_char_only_to_upper,
-    replace_and_change_ascii_case,
-};
-use crate::{
-    CaseStyleError,
-    CaseStyleValidationError,
-};
+use std::fmt;
+use std::str::FromStr;
 
-use std::{
-    fmt,
-    str::FromStr,
-};
+use crate::CaseStyleError;
+use crate::CaseStyleValidationError;
+use crate::internal::find_first_byte;
+use crate::internal::find_first_camel_case_boundary;
+use crate::internal::is_ascii_lower;
+use crate::internal::is_ascii_lower_or_digit;
+use crate::internal::is_ascii_upper;
+use crate::internal::is_ascii_upper_or_digit;
+use crate::internal::matches_camel;
+use crate::internal::matches_separated;
+use crate::internal::push_ascii_case;
+use crate::internal::push_first_char_only_to_upper;
+use crate::internal::replace_and_change_ascii_case;
 
 /// XML hyphenated variable naming style, such as `lower-hyphen`.
 pub const LOWER_HYPHEN: CaseStyle = CaseStyle::LowerHyphen;

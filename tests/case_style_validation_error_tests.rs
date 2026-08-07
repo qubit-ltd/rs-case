@@ -7,11 +7,9 @@
 // =============================================================================
 //! Tests for [`qubit_case::CaseStyleValidationError`].
 
-use qubit_case::{
-    CaseStyleValidationError,
-    LOWER_CAMEL,
-    UPPER_UNDERSCORE,
-};
+use qubit_case::CaseStyleValidationError;
+use qubit_case::LOWER_CAMEL;
+use qubit_case::UPPER_UNDERSCORE;
 
 #[test]
 fn test_validate_reports_style_and_value_for_invalid_input() {
