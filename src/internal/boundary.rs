@@ -21,11 +21,7 @@ use super::char_type::CharType;
 ///
 /// Returns the byte index of `needle`, or `None` if it is not found.
 #[must_use = "use the located separator or handle its absence"]
-pub(crate) fn find_first_byte(
-    value: &str,
-    start: usize,
-    needle: u8,
-) -> Option<usize> {
+pub(crate) fn find_first_byte(value: &str, start: usize, needle: u8) -> Option<usize> {
     value
         .as_bytes()
         .iter()
@@ -46,19 +42,14 @@ pub(crate) fn find_first_byte(
 /// Returns the byte index of the next CamelCase boundary, or `None` if no
 /// boundary exists.
 #[must_use = "use the located boundary or handle its absence"]
-pub(crate) fn find_first_camel_case_boundary(
-    value: &str,
-    start: usize,
-) -> Option<usize> {
+pub(crate) fn find_first_camel_case_boundary(value: &str, start: usize) -> Option<usize> {
     let start = start.max(1);
     value
         .as_bytes()
         .iter()
         .enumerate()
         .skip(start)
-        .find_map(|(index, _)| {
-            is_camel_case_word_boundary(value, index).then_some(index)
-        })
+        .find_map(|(index, _)| is_camel_case_word_boundary(value, index).then_some(index))
 }
 
 /// Tests whether an index is a CamelCase word boundary.
@@ -84,9 +75,7 @@ fn is_camel_case_word_boundary(value: &str, index: usize) -> bool {
     }
     let previous_type = CharType::of(bytes[index - 1]);
     match previous_type {
-        CharType::Lower => {
-            current_type == CharType::Upper || current_type == CharType::Digit
-        }
+        CharType::Lower => current_type == CharType::Upper || current_type == CharType::Digit,
         CharType::Upper => {
             if current_type == CharType::Lower {
                 false
@@ -167,10 +156,7 @@ pub(crate) fn matches_separated(
 ///
 /// Panics if `value` is empty. Callers must reject empty input first.
 #[must_use]
-pub(crate) fn matches_camel(
-    value: &str,
-    is_valid_first: fn(u8) -> bool,
-) -> bool {
+pub(crate) fn matches_camel(value: &str, is_valid_first: fn(u8) -> bool) -> bool {
     let bytes = value.as_bytes();
     if !is_valid_first(bytes[0]) {
         return false;

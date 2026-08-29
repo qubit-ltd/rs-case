@@ -65,10 +65,7 @@ fn test_to_preserves_empty_string() {
 
 #[test]
 fn test_to_remains_permissive_for_invalid_source_input() {
-    assert_eq!(
-        LOWER_HYPHEN.to(LOWER_UNDERSCORE, "UPPER-HYPHEN"),
-        "UPPER_HYPHEN",
-    );
+    assert_eq!(LOWER_HYPHEN.to(LOWER_UNDERSCORE, "UPPER-HYPHEN"), "UPPER_HYPHEN",);
 }
 
 #[test]

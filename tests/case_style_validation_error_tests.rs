@@ -20,10 +20,7 @@ fn test_validate_reports_style_and_value_for_invalid_input() {
         .expect_err("an uppercase initial should fail lower-camel validation");
     assert_eq!(error.style(), LOWER_CAMEL);
     assert_eq!(error.value(), "UpperCamel");
-    assert_eq!(
-        error,
-        CaseStyleValidationError::new(LOWER_CAMEL, "UpperCamel"),
-    );
+    assert_eq!(error, CaseStyleValidationError::new(LOWER_CAMEL, "UpperCamel"),);
     assert_eq!(
         error.to_string(),
         "Value 'UpperCamel' does not match case style 'lower-camel'.",

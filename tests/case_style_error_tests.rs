@@ -14,16 +14,14 @@ use qubit_case::CaseStyleError;
 
 #[test]
 fn test_from_str_reports_unknown_style_name() {
-    let error = CaseStyle::from_str("unknown-style")
-        .expect_err("unknown style should fail");
+    let error = CaseStyle::from_str("unknown-style").expect_err("unknown style should fail");
     assert_eq!(error.name(), "unknown-style");
     assert_eq!(error.to_string(), "Unknown case style: 'unknown-style'.");
 }
 
 #[test]
 fn test_of_reports_unknown_style_name() {
-    let error =
-        CaseStyle::of("not-a-style").expect_err("unknown style should fail");
+    let error = CaseStyle::of("not-a-style").expect_err("unknown style should fail");
     assert_eq!(error.name(), "not-a-style");
     assert_eq!(error.to_string(), "Unknown case style: 'not-a-style'.");
 }

@@ -58,12 +58,7 @@ pub(crate) fn push_ascii_case(out: &mut String, value: &str, uppercase: bool) {
 ///
 /// Returns a newly allocated string produced in one traversal of `value`.
 #[must_use]
-pub(crate) fn replace_and_change_ascii_case(
-    value: &str,
-    from: char,
-    to: char,
-    uppercase: bool,
-) -> String {
+pub(crate) fn replace_and_change_ascii_case(value: &str, from: char, to: char, uppercase: bool) -> String {
     let mut out = String::with_capacity(value.len());
     out.extend(value.chars().map(|ch| {
         if ch == from {

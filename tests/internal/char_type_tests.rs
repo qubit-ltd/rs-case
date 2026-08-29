@@ -22,10 +22,7 @@ fn test_upper_to_lower_transition_starts_new_word() {
 #[test]
 fn test_digit_boundaries_split_around_numbers() {
     assert_eq!(UPPER_CAMEL.to(LOWER_HYPHEN, "Http2Client"), "http-2-client");
-    assert_eq!(
-        LOWER_CAMEL.to(UPPER_UNDERSCORE, "http2Client"),
-        "HTTP_2_CLIENT"
-    );
+    assert_eq!(LOWER_CAMEL.to(UPPER_UNDERSCORE, "http2Client"), "HTTP_2_CLIENT");
     assert_eq!(UPPER_CAMEL.to(LOWER_CAMEL, "A1B2"), "a1B2");
 }
 

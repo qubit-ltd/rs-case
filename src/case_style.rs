@@ -215,11 +215,7 @@ impl CaseStyle {
     /// original value when validation fails. The value is not converted in
     /// that case.
     #[must_use = "use the converted value or handle validation errors"]
-    pub fn checked_to(
-        self,
-        target: Self,
-        value: &str,
-    ) -> Result<String, CaseStyleValidationError> {
+    pub fn checked_to(self, target: Self, value: &str) -> Result<String, CaseStyleValidationError> {
         self.validate(value)?;
         Ok(self.to(target, value))
     }
@@ -240,26 +236,11 @@ impl CaseStyle {
             return false;
         }
         match self {
-            Self::LowerHyphen => matches_separated(
-                value,
-                b'-',
-                is_ascii_lower,
-                is_ascii_lower_or_digit,
-            ),
-            Self::LowerUnderscore => matches_separated(
-                value,
-                b'_',
-                is_ascii_lower,
-                is_ascii_lower_or_digit,
-            ),
+            Self::LowerHyphen => matches_separated(value, b'-', is_ascii_lower, is_ascii_lower_or_digit),
+            Self::LowerUnderscore => matches_separated(value, b'_', is_ascii_lower, is_ascii_lower_or_digit),
             Self::LowerCamel => matches_camel(value, is_ascii_lower),
             Self::UpperCamel => matches_camel(value, is_ascii_upper),
-            Self::UpperUnderscore => matches_separated(
-                value,
-                b'_',
-                is_ascii_upper,
-                is_ascii_upper_or_digit,
-            ),
+            Self::UpperUnderscore => matches_separated(value, b'_', is_ascii_upper, is_ascii_upper_or_digit),
         }
     }
 
@@ -277,24 +258,12 @@ impl CaseStyle {
     #[must_use = "use the optimized conversion result"]
     fn quick_convert(self, target: Self, value: &str) -> Option<String> {
         match (self, target) {
-            (Self::LowerHyphen, Self::LowerUnderscore) => {
-                Some(value.replace('-', "_"))
-            }
-            (Self::LowerHyphen, Self::UpperUnderscore) => {
-                Some(replace_and_change_ascii_case(value, '-', '_', true))
-            }
-            (Self::LowerUnderscore, Self::LowerHyphen) => {
-                Some(value.replace('_', "-"))
-            }
-            (Self::LowerUnderscore, Self::UpperUnderscore) => {
-                Some(value.to_ascii_uppercase())
-            }
-            (Self::UpperUnderscore, Self::LowerHyphen) => {
-                Some(replace_and_change_ascii_case(value, '_', '-', false))
-            }
-            (Self::UpperUnderscore, Self::LowerUnderscore) => {
-                Some(value.to_ascii_lowercase())
-            }
+            (Self::LowerHyphen, Self::LowerUnderscore) => Some(value.replace('-', "_")),
+            (Self::LowerHyphen, Self::UpperUnderscore) => Some(replace_and_change_ascii_case(value, '-', '_', true)),
+            (Self::LowerUnderscore, Self::LowerHyphen) => Some(value.replace('_', "-")),
+            (Self::LowerUnderscore, Self::UpperUnderscore) => Some(value.to_ascii_uppercase()),
+            (Self::UpperUnderscore, Self::LowerHyphen) => Some(replace_and_change_ascii_case(value, '_', '-', false)),
+            (Self::UpperUnderscore, Self::LowerUnderscore) => Some(value.to_ascii_lowercase()),
             _ => None,
         }
     }
@@ -312,9 +281,7 @@ impl CaseStyle {
     /// Returns a best-effort converted string.
     #[must_use]
     fn convert_by_words(self, target: Self, value: &str) -> String {
-        let mut out = String::with_capacity(
-            value.len() + 4 * target.word_separator().len(),
-        );
+        let mut out = String::with_capacity(value.len() + 4 * target.word_separator().len());
         let mut word_start = 0;
         let mut search_start = 0;
         let mut has_boundary = false;
@@ -361,12 +328,8 @@ impl CaseStyle {
     fn find_boundary(self, value: &str, start: usize) -> Option<usize> {
         match self {
             Self::LowerHyphen => find_first_byte(value, start, b'-'),
-            Self::LowerUnderscore | Self::UpperUnderscore => {
-                find_first_byte(value, start, b'_')
-            }
-            Self::LowerCamel | Self::UpperCamel => {
-                find_first_camel_case_boundary(value, start)
-            }
+            Self::LowerUnderscore | Self::UpperUnderscore => find_first_byte(value, start, b'_'),
+            Self::LowerCamel | Self::UpperCamel => find_first_camel_case_boundary(value, start),
         }
     }
 

@@ -60,20 +60,11 @@ fn test_to_converts_lower_camel_to_all_styles_with_numbers() {
 fn test_to_converts_upper_camel_to_all_styles_with_acronyms_and_numbers() {
     let source = "XMLParser2Response";
 
-    assert_eq!(
-        UPPER_CAMEL.to(LOWER_HYPHEN, source),
-        "xml-parser-2-response"
-    );
-    assert_eq!(
-        UPPER_CAMEL.to(LOWER_UNDERSCORE, source),
-        "xml_parser_2_response"
-    );
+    assert_eq!(UPPER_CAMEL.to(LOWER_HYPHEN, source), "xml-parser-2-response");
+    assert_eq!(UPPER_CAMEL.to(LOWER_UNDERSCORE, source), "xml_parser_2_response");
     assert_eq!(UPPER_CAMEL.to(LOWER_CAMEL, source), "xmlParser2Response");
     assert_eq!(UPPER_CAMEL.to(UPPER_CAMEL, source), source);
-    assert_eq!(
-        UPPER_CAMEL.to(UPPER_UNDERSCORE, source),
-        "XML_PARSER_2_RESPONSE"
-    );
+    assert_eq!(UPPER_CAMEL.to(UPPER_UNDERSCORE, source), "XML_PARSER_2_RESPONSE");
 }
 
 #[test]
