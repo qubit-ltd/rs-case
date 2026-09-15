@@ -117,7 +117,7 @@ jobs:
         run: cargo install cargo-llvm-cov --version 0.8.6 --locked
       - name: Collect and check coverage
         env:
-          # Rust 1.94 non-incremental coverage loses counters for exercised inline functions.
+          # Rust 1.94 non-incremental coverage can lose counters for inline functions.
           CARGO_INCREMENTAL: "1"
         run: ./coverage.sh
       - name: Build project (release)
