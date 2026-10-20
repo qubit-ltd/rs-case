@@ -174,7 +174,7 @@ pub(crate) fn matches_camel(value: &str, is_valid_first: fn(u8) -> bool) -> bool
 ///
 /// Returns `true` for `a` through `z`.
 #[must_use]
-#[inline(always)]
+#[inline]
 pub(crate) fn is_ascii_lower(byte: u8) -> bool {
     byte.is_ascii_lowercase()
 }
@@ -189,7 +189,7 @@ pub(crate) fn is_ascii_lower(byte: u8) -> bool {
 ///
 /// Returns `true` for `A` through `Z`.
 #[must_use]
-#[inline(always)]
+#[inline]
 pub(crate) fn is_ascii_upper(byte: u8) -> bool {
     byte.is_ascii_uppercase()
 }
@@ -204,7 +204,7 @@ pub(crate) fn is_ascii_upper(byte: u8) -> bool {
 ///
 /// Returns `true` for `0` through `9`.
 #[must_use]
-#[inline(always)]
+#[inline]
 fn is_ascii_digit(byte: u8) -> bool {
     byte.is_ascii_digit()
 }
@@ -219,7 +219,7 @@ fn is_ascii_digit(byte: u8) -> bool {
 ///
 /// Returns `true` for ASCII letters or decimal digits.
 #[must_use]
-#[inline(always)]
+#[inline]
 fn is_ascii_alnum(byte: u8) -> bool {
     byte.is_ascii_alphanumeric()
 }
@@ -234,7 +234,7 @@ fn is_ascii_alnum(byte: u8) -> bool {
 ///
 /// Returns `true` for lowercase ASCII letters or decimal digits.
 #[must_use]
-#[inline(always)]
+#[inline]
 pub(crate) fn is_ascii_lower_or_digit(byte: u8) -> bool {
     is_ascii_lower(byte) || is_ascii_digit(byte)
 }

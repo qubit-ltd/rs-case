@@ -40,7 +40,7 @@ impl CaseStyleError {
     ///
     /// Returns the original name passed to `CaseStyle::of` or `FromStr`.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -56,7 +56,6 @@ impl fmt::Display for CaseStyleError {
     /// # Returns
     ///
     /// Returns the formatter result.
-    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unknown case style: '{}'.", self.name)
     }

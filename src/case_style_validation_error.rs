@@ -14,6 +14,17 @@ use std::fmt;
 use crate::CaseStyle;
 
 /// Error returned when a value does not match an expected case style.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_case::CaseStyleValidationError;
+/// use qubit_case::LOWER_CAMEL;
+///
+/// let error = CaseStyleValidationError::new(LOWER_CAMEL, "UpperCamel");
+/// assert_eq!(error.style(), LOWER_CAMEL);
+/// assert_eq!(error.value(), "UpperCamel");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CaseStyleValidationError {
     /// Case style against which the value was validated.
@@ -49,7 +60,7 @@ impl CaseStyleValidationError {
     ///
     /// Returns the style used to validate the value.
     #[must_use = "use the expected case style"]
-    #[inline(always)]
+    #[inline]
     pub const fn style(&self) -> CaseStyle {
         self.style
     }
@@ -61,7 +72,7 @@ impl CaseStyleValidationError {
     /// Returns the original value passed to `CaseStyle::validate` or
     /// `CaseStyle::checked_to`.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn value(&self) -> &str {
         &self.value
     }
@@ -77,7 +88,7 @@ impl fmt::Display for CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns the formatter result.
-    #[inline(always)]
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

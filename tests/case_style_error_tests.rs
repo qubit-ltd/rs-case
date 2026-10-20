@@ -7,6 +7,7 @@
 // =============================================================================
 //! Tests for [`qubit_case::CaseStyleError`].
 
+use std::error::Error;
 use std::str::FromStr;
 
 use qubit_case::CaseStyle;
@@ -34,7 +35,7 @@ fn test_new_preserves_original_name() {
 
 #[test]
 fn test_error_implements_standard_traits() {
-    fn assert_error<T: std::error::Error + Send + Sync + 'static>() {}
+    fn assert_error<T: Error + Send + Sync + 'static>() {}
 
     assert_error::<CaseStyleError>();
     let left = CaseStyleError::new("x");

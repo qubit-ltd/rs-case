@@ -54,6 +54,15 @@ const VALUES: [CaseStyle; 5] = [
 /// The conversion rules are intended for ASCII identifiers. Non-ASCII input is
 /// accepted on a best-effort basis, but its exact conversion behavior is not a
 /// stable contract.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_case::CaseStyle;
+///
+/// let converted = CaseStyle::LowerUnderscore.to(CaseStyle::UpperCamel, "case_style");
+/// assert_eq!(converted, "CaseStyle");
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CaseStyle {
@@ -91,7 +100,6 @@ impl CaseStyle {
     ///
     /// Returns [`CaseStyleError`] carrying the original name when no supported
     /// style matches it.
-    #[must_use = "handle the parsing result"]
     pub fn of(name: &str) -> Result<Self, CaseStyleError> {
         let normalized_name = name.replace('_', "-").to_ascii_lowercase();
         for style in Self::values() {
@@ -109,7 +117,7 @@ impl CaseStyle {
     ///
     /// Returns a static slice containing all naming styles.
     #[must_use = "use the supported naming styles"]
-    #[inline(always)]
+    #[inline]
     pub const fn values() -> &'static [Self] {
         &VALUES
     }
@@ -121,7 +129,7 @@ impl CaseStyle {
     /// Returns the lower-hyphen style name used by the JavaScript reference
     /// implementation.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn name(self) -> &'static str {
         match self {
             Self::LowerHyphen => "lower-hyphen",
@@ -139,7 +147,7 @@ impl CaseStyle {
     /// Returns `"-"` for lower hyphen, `"_"` for underscore styles, and `""`
     /// for camel case styles.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn word_separator(self) -> &'static str {
         match self {
             Self::LowerHyphen => "-",
@@ -189,7 +197,6 @@ impl CaseStyle {
     /// Returns [`CaseStyleValidationError`] carrying this style and the
     /// original value when `value` is empty, contains unsupported bytes, or
     /// otherwise violates this style's identifier rules.
-    #[must_use = "handle validation errors"]
     pub fn validate(self, value: &str) -> Result<(), CaseStyleValidationError> {
         if self.matches(value) {
             Ok(())
@@ -214,7 +221,6 @@ impl CaseStyle {
     /// Returns [`CaseStyleValidationError`] carrying this source style and the
     /// original value when validation fails. The value is not converted in
     /// that case.
-    #[must_use = "use the converted value or handle validation errors"]
     pub fn checked_to(self, target: Self, value: &str) -> Result<String, CaseStyleValidationError> {
         self.validate(value)?;
         Ok(self.to(target, value))
@@ -255,7 +261,6 @@ impl CaseStyle {
     ///
     /// Returns `Some` converted string for optimized pairs, or `None` when the
     /// generic word conversion should be used.
-    #[must_use = "use the optimized conversion result"]
     fn quick_convert(self, target: Self, value: &str) -> Option<String> {
         match (self, target) {
             (Self::LowerHyphen, Self::LowerUnderscore) => Some(value.replace('-', "_")),
@@ -323,8 +328,7 @@ impl CaseStyle {
     ///
     /// Returns the byte index of the next boundary, or `None` when no boundary
     /// exists after `start`.
-    #[must_use = "use the next word boundary"]
-    #[inline(always)]
+    #[inline]
     fn find_boundary(self, value: &str, start: usize) -> Option<usize> {
         match self {
             Self::LowerHyphen => find_first_byte(value, start, b'-'),
@@ -375,7 +379,7 @@ impl fmt::Display for CaseStyle {
     /// # Returns
     ///
     /// Returns the formatter result.
-    #[inline(always)]
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.name())
     }
@@ -398,7 +402,7 @@ impl FromStr for CaseStyle {
     ///
     /// Returns [`CaseStyleError`] carrying `s` when it does not name a
     /// supported style.
-    #[inline(always)]
+    #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::of(s)
     }
