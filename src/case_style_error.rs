@@ -12,6 +12,17 @@
 use std::fmt;
 
 /// Error returned when a case style name is unknown.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_case::CaseStyle;
+///
+/// let error = CaseStyle::of("unknown-style").expect_err("style is unsupported");
+/// assert_eq!(error.name(), "unknown-style");
+/// assert_eq!(error.to_string(), "Unknown case style: 'unknown-style'.");
+/// ```
+#[must_use = "inspect or report the case style error"]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CaseStyleError {
     /// Original case style name that could not be parsed.
