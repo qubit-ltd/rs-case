@@ -48,7 +48,8 @@ impl CaseStyleError {
     ///
     /// # Returns
     ///
-    /// Returns the original name passed to `CaseStyle::of` or `FromStr`.
+    /// Returns the original name stored in this error, whether supplied to
+    /// [`CaseStyleError::new`] or received from a failed parse.
     #[must_use]
     #[inline]
     pub fn name(&self) -> &str {
