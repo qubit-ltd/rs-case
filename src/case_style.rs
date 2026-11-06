@@ -386,6 +386,7 @@ impl fmt::Display for CaseStyle {
 }
 
 impl FromStr for CaseStyle {
+    /// Error returned when the input does not name a supported case style.
     type Err = CaseStyleError;
 
     /// Parses a naming style from a string.

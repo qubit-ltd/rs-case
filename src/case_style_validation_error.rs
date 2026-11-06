@@ -25,6 +25,7 @@ use crate::CaseStyle;
 /// assert_eq!(error.style(), LOWER_CAMEL);
 /// assert_eq!(error.value(), "UpperCamel");
 /// ```
+#[must_use = "inspect or report the case style validation error"]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CaseStyleValidationError {
     /// Case style against which the value was validated.
@@ -45,7 +46,6 @@ impl CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns a new error carrying the expected style and original value.
-    #[must_use = "use the constructed validation error"]
     #[inline]
     pub fn new(style: CaseStyle, value: impl Into<String>) -> Self {
         Self {
@@ -59,7 +59,6 @@ impl CaseStyleValidationError {
     /// # Returns
     ///
     /// Returns the style used to validate the value.
-    #[must_use = "use the expected case style"]
     #[inline]
     pub const fn style(&self) -> CaseStyle {
         self.style
