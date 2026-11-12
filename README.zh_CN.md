@@ -81,12 +81,14 @@ ASCII 字符，以及首字符不是 ASCII 字母的输入。下表给出完整�
 数字开头。例如，`a_1` 符合 `LowerUnderscore`，而 `1_a` 不符合。驼峰风格不
 使用分隔符，并要求首字母大小写符合风格定义。
 
-转换时，以下字符变化会形成单词边界：小写字母转大写字母、字母转数字、数字
-转大写字母。连续大写字母后接小写字母时，最后一个大写字母归入后一个单词；
-数字后接小写字母本身不会形成边界。例如：
+当源风格为 `LowerCamel` 或 `UpperCamel` 时，转换会在以下字符变化处划分单词：
+小写字母转大写字母、字母转数字、数字转大写字母。连续大写字母后接小写字母时，
+最后一个大写字母归入后一个单词；数字后接小写字母本身不会形成边界。带分隔符的
+源风格按自身分隔符划分单词，不会因为字母后接数字而拆词。例如：
 
 ```rust
 use qubit_case::LOWER_CAMEL;
+use qubit_case::LOWER_HYPHEN;
 use qubit_case::LOWER_UNDERSCORE;
 use qubit_case::UPPER_CAMEL;
 
@@ -96,6 +98,8 @@ assert!(LOWER_CAMEL.matches("aBC"));
 assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2Client"), "http_2_client");
 assert_eq!(UPPER_CAMEL.to(LOWER_UNDERSCORE, "XMLHttp"), "xml_http");
 assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2client"), "http_2client");
+assert_eq!(LOWER_UNDERSCORE.to(LOWER_HYPHEN, "http2_client"), "http2-client");
+assert_eq!(LOWER_CAMEL.to(LOWER_HYPHEN, "http2Client"), "http-2-client");
 ```
 
 严格匹配与转换的职责不同：`to` 不会校验输入；对于 ASCII 以外的字符，它只

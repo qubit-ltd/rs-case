@@ -88,14 +88,17 @@ word after a separator may start with a letter or digit. For example,
 `a_1` matches `LowerUnderscore`, but `1_a` does not. Camel styles have no
 separators and require the initial letter's case shown by the style.
 
-Conversion identifies word boundaries at lowercase-to-uppercase,
-letter-to-digit, and digit-to-uppercase transitions. In an uppercase run
-followed by lowercase letters, the final uppercase letter starts the next
-word. A digit followed by a lowercase letter does not itself create a
-boundary. For example:
+When the source style is `LowerCamel` or `UpperCamel`, conversion identifies word
+boundaries at lowercase-to-uppercase, letter-to-digit, and digit-to-uppercase
+transitions. In an uppercase run followed by lowercase letters, the final
+uppercase letter starts the next word. A digit followed by a lowercase letter
+does not itself create a boundary. Separated source styles use their own
+separator to identify words; they do not split a word at letter-to-digit
+transitions. For example:
 
 ```rust
 use qubit_case::LOWER_CAMEL;
+use qubit_case::LOWER_HYPHEN;
 use qubit_case::LOWER_UNDERSCORE;
 use qubit_case::UPPER_CAMEL;
 
@@ -105,6 +108,8 @@ assert!(LOWER_CAMEL.matches("aBC"));
 assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2Client"), "http_2_client");
 assert_eq!(UPPER_CAMEL.to(LOWER_UNDERSCORE, "XMLHttp"), "xml_http");
 assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2client"), "http_2client");
+assert_eq!(LOWER_UNDERSCORE.to(LOWER_HYPHEN, "http2_client"), "http2-client");
+assert_eq!(LOWER_CAMEL.to(LOWER_HYPHEN, "http2Client"), "http-2-client");
 ```
 
 Matching and conversion have different contracts: `to` does not validate its
