@@ -94,6 +94,54 @@ fn test_checked_to_produces_values_matching_every_target_style() {
 }
 
 #[test]
+fn test_validation_contract_matrix() {
+    let valid = [
+        (LOWER_HYPHEN, "a"),
+        (LOWER_HYPHEN, "a-1"),
+        (LOWER_UNDERSCORE, "a"),
+        (LOWER_UNDERSCORE, "a_1"),
+        (UPPER_UNDERSCORE, "A"),
+        (UPPER_UNDERSCORE, "A_1"),
+        (LOWER_CAMEL, "a"),
+        (LOWER_CAMEL, "aBC"),
+        (UPPER_CAMEL, "A"),
+        (UPPER_CAMEL, "HTTP2Client"),
+    ];
+
+    for (source, value) in valid {
+        assert!(source.matches(value), "{source}: {value:?}");
+        assert_eq!(source.validate(value), Ok(()));
+        for target in CaseStyle::values() {
+            let converted = source.checked_to(*target, value).unwrap();
+            assert_eq!(converted, source.to(*target, value));
+            assert!(target.matches(&converted), "{source} -> {target}: {value:?}");
+        }
+    }
+
+    for source in CaseStyle::values() {
+        let specific: &[&str] = match source {
+            CaseStyle::LowerHyphen => &["-a", "a-", "a--b", "A", "a_b"],
+            CaseStyle::LowerUnderscore => &["_a", "a_", "a__b", "A", "a-b"],
+            CaseStyle::UpperUnderscore => &["_A", "A_", "A__B", "a", "A-B"],
+            CaseStyle::LowerCamel => &["A", "a_b", "a-b"],
+            CaseStyle::UpperCamel => &["a", "A_B", "A-B"],
+        };
+        for value in ["", "1", "1a", "1A", "a b", "A B", "a$", "A$", "é", "aé", "Aé"]
+            .into_iter()
+            .chain(specific.iter().copied())
+        {
+            assert!(!source.matches(value), "{source}: {value:?}");
+            let error = source.validate(value).unwrap_err();
+            assert_eq!(error.style(), *source);
+            assert_eq!(error.value(), value);
+            for target in CaseStyle::values() {
+                assert_eq!(source.checked_to(*target, value), Err(error.clone()));
+            }
+        }
+    }
+}
+
+#[test]
 fn test_style_name_round_trips_through_from_str() {
     for style in CaseStyle::values() {
         assert_eq!(CaseStyle::from_str(style.name()), Ok(*style));
