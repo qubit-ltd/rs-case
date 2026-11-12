@@ -70,11 +70,11 @@ Generated reports are saved in the following locations by default:
 If you only want to test specific modules, you can use:
 
 ```bash
-# Test only case_style module
-cargo llvm-cov --html --open -- case_style::
+# Run the internal boundary tests by their module path
+cargo llvm-cov --html --open --test internal_tests -- internal::boundary_tests::
 
-# Test only specific test files
-cargo llvm-cov --html --open --test case_style_tests -- case_style
+# Run the complete case_style_tests integration-test target
+cargo llvm-cov --html --open --test case_style_tests
 ```
 
 ## Exclude Specific Files
@@ -90,6 +90,8 @@ If you need to modify exclusion rules, please edit the `.llvm-cov.toml` file.
 ## CI/CD Integration
 
 ### GitHub Actions Example
+
+The formal CI workflow is the repository's existing shared workflow, invoked by `.github/workflows/ci.yml`. The standalone example below is optional; it does not replace or add a project workflow.
 
 ```yaml
 name: Code Coverage
@@ -116,14 +118,12 @@ jobs:
         run: cargo install cargo-llvm-cov
 
       - name: Generate coverage
-        run: |
-          cd rust-common/rs-case
-          cargo llvm-cov --lcov --output-path lcov.info
+        run: cargo llvm-cov --lcov --output-path lcov.info
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: rust-common/rs-case/lcov.info
+          files: lcov.info
           flags: qubit-case
 ```
 

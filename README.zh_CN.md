@@ -63,6 +63,45 @@ assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
 assert_eq!(LOWER_CAMEL.to_string(), "lower-camel");
 ```
 
+## 匹配规则与单词边界
+
+`CaseStyle::matches` 会检查整个字符串。所有风格都拒绝空字符串、非
+ASCII 字符，以及首字符不是 ASCII 字母的输入。下表给出完整的可接受语法；
+这些表达式仅用于说明规则，不需要正则表达式依赖。
+
+| 风格 | 语法 |
+| --- | --- |
+| `LowerHyphen` | `[a-z][a-z0-9]*(?:-[a-z0-9]+)*` |
+| `LowerUnderscore` | `[a-z][a-z0-9]*(?:_[a-z0-9]+)*` |
+| `UpperUnderscore` | `[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*` |
+| `LowerCamel` | `[a-z][A-Za-z0-9]*` |
+| `UpperCamel` | `[A-Z][A-Za-z0-9]*` |
+
+对于带分隔符的风格，第一个单词必须以字母开头；分隔符后的单词可以以字母或
+数字开头。例如，`a_1` 符合 `LowerUnderscore`，而 `1_a` 不符合。驼峰风格不
+使用分隔符，并要求首字母大小写符合风格定义。
+
+转换时，以下字符变化会形成单词边界：小写字母转大写字母、字母转数字、数字
+转大写字母。连续大写字母后接小写字母时，最后一个大写字母归入后一个单词；
+数字后接小写字母本身不会形成边界。例如：
+
+```rust
+use qubit_case::LOWER_CAMEL;
+use qubit_case::LOWER_UNDERSCORE;
+use qubit_case::UPPER_CAMEL;
+
+assert!(LOWER_UNDERSCORE.matches("a_1"));
+assert!(!LOWER_UNDERSCORE.matches("1_a"));
+assert!(LOWER_CAMEL.matches("aBC"));
+assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2Client"), "http_2_client");
+assert_eq!(UPPER_CAMEL.to(LOWER_UNDERSCORE, "XMLHttp"), "xml_http");
+assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2client"), "http_2client");
+```
+
+严格匹配与转换的职责不同：`to` 不会校验输入；对于 ASCII 以外的字符，它只
+尽力转换，具体转换结果不属于稳定契约。`checked_to` 会先按源风格校验，再执行
+转换。
+
 ## API 参考
 
 ### 类型

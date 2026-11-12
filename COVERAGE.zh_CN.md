@@ -70,11 +70,11 @@ cargo llvm-cov --cobertura --output-path target/llvm-cov/cobertura.xml
 如果只想测试特定的模块，可以使用：
 
 ```bash
-# 只测试 case_style 模块
-cargo llvm-cov --html --open -- case_style::
+# 按模块路径运行 internal_tests 中的边界测试
+cargo llvm-cov --html --open --test internal_tests -- internal::boundary_tests::
 
-# 只测试特定的测试文件
-cargo llvm-cov --html --open --test case_style_tests -- case_style
+# 运行完整的 case_style_tests 集成测试目标
+cargo llvm-cov --html --open --test case_style_tests
 ```
 
 ## 排除特定文件
@@ -90,6 +90,8 @@ cargo llvm-cov --html --open --test case_style_tests -- case_style
 ## CI/CD 集成
 
 ### GitHub Actions 示例
+
+正式 CI 使用仓库现有的共享工作流，由 `.github/workflows/ci.yml` 调用。以下独立示例仅供选择接入，不会替代或新增项目工作流。
 
 ```yaml
 name: Code Coverage
@@ -116,14 +118,12 @@ jobs:
         run: cargo install cargo-llvm-cov
 
       - name: Generate coverage
-        run: |
-          cd rust-common/rs-case
-          cargo llvm-cov --lcov --output-path lcov.info
+        run: cargo llvm-cov --lcov --output-path lcov.info
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: rust-common/rs-case/lcov.info
+          files: lcov.info
           flags: qubit-case
 ```
 

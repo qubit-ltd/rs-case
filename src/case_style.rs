@@ -190,7 +190,7 @@ impl CaseStyle {
     /// # Returns
     ///
     /// Returns `Ok(())` when `value` is a non-empty ASCII identifier matching
-    /// this style.
+    /// this style. See [`Self::matches`] for the complete matching rules.
     ///
     /// # Errors
     ///
@@ -214,7 +214,8 @@ impl CaseStyle {
     ///
     /// # Returns
     ///
-    /// Returns the converted string when `value` matches this source style.
+    /// Returns the converted string when `value` matches this source style
+    /// according to [`Self::matches`].
     ///
     /// # Errors
     ///
@@ -227,6 +228,37 @@ impl CaseStyle {
     }
 
     /// Tests whether a string strictly matches this naming style.
+    ///
+    /// Matching applies to the entire value. The value must be non-empty and
+    /// contain only ASCII characters. All styles require an ASCII letter as
+    /// the first character, while words after a separator may begin with a
+    /// digit. The complete syntax is:
+    ///
+    /// | Style | Syntax |
+    /// | --- | --- |
+    /// | [`LowerHyphen`](Self::LowerHyphen) | `[a-z][a-z0-9]*(?:-[a-z0-9]+)*` |
+    /// | [`LowerUnderscore`](Self::LowerUnderscore) | `[a-z][a-z0-9]*(?:_[a-z0-9]+)*` |
+    /// | [`UpperUnderscore`](Self::UpperUnderscore) | `[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*` |
+    /// | [`LowerCamel`](Self::LowerCamel) | `[a-z][A-Za-z0-9]*` |
+    /// | [`UpperCamel`](Self::UpperCamel) | `[A-Z][A-Za-z0-9]*` |
+    ///
+    /// These expressions describe the accepted syntax; they do not imply a
+    /// regular-expression dependency.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use qubit_case::LOWER_CAMEL;
+    /// use qubit_case::LOWER_UNDERSCORE;
+    /// use qubit_case::UPPER_CAMEL;
+    ///
+    /// assert!(LOWER_UNDERSCORE.matches("a_1"));
+    /// assert!(!LOWER_UNDERSCORE.matches("1_a"));
+    /// assert!(LOWER_CAMEL.matches("aBC"));
+    /// assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2Client"), "http_2_client");
+    /// assert_eq!(UPPER_CAMEL.to(LOWER_UNDERSCORE, "XMLHttp"), "xml_http");
+    /// assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2client"), "http_2client");
+    /// ```
     ///
     /// # Parameters
     ///

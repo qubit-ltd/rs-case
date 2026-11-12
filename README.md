@@ -68,6 +68,50 @@ assert!(UPPER_UNDERSCORE.matches("HTTP_2_CLIENT"));
 assert_eq!(LOWER_CAMEL.to_string(), "lower-camel");
 ```
 
+## Matching and Word Boundaries
+
+`CaseStyle::matches` checks the entire value. Every style rejects an empty
+value, non-ASCII characters, and a value whose first character is not an ASCII
+letter. These expressions describe the complete accepted syntax (they do not
+require a regular-expression dependency):
+
+| Style | Syntax |
+| --- | --- |
+| `LowerHyphen` | `[a-z][a-z0-9]*(?:-[a-z0-9]+)*` |
+| `LowerUnderscore` | `[a-z][a-z0-9]*(?:_[a-z0-9]+)*` |
+| `UpperUnderscore` | `[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*` |
+| `LowerCamel` | `[a-z][A-Za-z0-9]*` |
+| `UpperCamel` | `[A-Z][A-Za-z0-9]*` |
+
+For separated styles, the first word must start with a letter, while each
+word after a separator may start with a letter or digit. For example,
+`a_1` matches `LowerUnderscore`, but `1_a` does not. Camel styles have no
+separators and require the initial letter's case shown by the style.
+
+Conversion identifies word boundaries at lowercase-to-uppercase,
+letter-to-digit, and digit-to-uppercase transitions. In an uppercase run
+followed by lowercase letters, the final uppercase letter starts the next
+word. A digit followed by a lowercase letter does not itself create a
+boundary. For example:
+
+```rust
+use qubit_case::LOWER_CAMEL;
+use qubit_case::LOWER_UNDERSCORE;
+use qubit_case::UPPER_CAMEL;
+
+assert!(LOWER_UNDERSCORE.matches("a_1"));
+assert!(!LOWER_UNDERSCORE.matches("1_a"));
+assert!(LOWER_CAMEL.matches("aBC"));
+assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2Client"), "http_2_client");
+assert_eq!(UPPER_CAMEL.to(LOWER_UNDERSCORE, "XMLHttp"), "xml_http");
+assert_eq!(LOWER_CAMEL.to(LOWER_UNDERSCORE, "http2client"), "http_2client");
+```
+
+Matching and conversion have different contracts: `to` does not validate its
+input, and ASCII-external input is converted on a best-effort basis without a
+stable exact-result guarantee. `checked_to` validates the source value before
+converting it.
+
 ## API Reference
 
 ### Types
